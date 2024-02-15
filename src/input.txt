@@ -1,0 +1,5 @@
+A node stream is a method of transferring large amounts of data 
+
+on mobile devices or websites (such as uploading detailed photographs) 
+
+by breaking the file or data down into manageable chunks
