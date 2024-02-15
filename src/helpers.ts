@@ -1,5 +1,6 @@
 // hw3 task2:
 import fs from 'fs';
+import { Transform } from 'stream';
 import axios from 'axios';
 import { promisify } from 'util';
 import { ImageRequest } from './types';
@@ -34,4 +35,31 @@ const createDefaultDb = () => {
     })
 }
 
-export { createDefaultDb, processImage }
+const readAndWrite = () => {
+  const readable = fs.createReadStream('./src/input.txt', 'utf8');
+
+  const upperCaseTransform = new Transform({
+    transform(chunk, encoding, callback) {
+      this.push(chunk.toString().toUpperCase());
+      callback();
+    }
+  });
+
+  const writable = fs.createWriteStream('./src/output.txt', 'utf8');
+
+  readable.on('error', (error) => {
+    console.error('Readdable error:', error);
+  });
+
+  writable.on('error', (error) => {
+    console.error('Writable error:', error);
+  });
+
+  writable.on('finish', () => {
+    console.log('Result written to output.txt');
+  });
+
+  readable.pipe(upperCaseTransform).pipe(writable);
+}
+
+export { createDefaultDb, processImage, readAndWrite }
