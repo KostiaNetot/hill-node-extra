@@ -3,7 +3,8 @@ import fs from 'fs';
 import { Transform } from 'stream';
 import axios from 'axios';
 import { promisify } from 'util';
-import { ImageRequest } from './types';
+import { ImageRequest, Event, Order } from './types';
+import { ShoppingManager } from './services';
 
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
@@ -62,4 +63,53 @@ const readAndWrite = () => {
   readable.pipe(upperCaseTransform).pipe(writable);
 }
 
-export { createDefaultDb, processImage, readAndWrite }
+const dispatchShoppingEvent = (order: Order): void | false => {
+  const shoppingManager = new ShoppingManager();
+  
+  const isOrder = (obj: any): obj is Order => {
+    return (
+      Object.values(Event).includes(obj.event) &&
+      typeof obj.addToCart === 'boolean' &&
+      (typeof obj.price === 'number' || typeof obj.price === 'string') &&
+      typeof obj.removed === 'boolean' &&
+      typeof obj.sold === 'boolean'
+    );
+  }
+
+  if (!isOrder(order)) {
+    console.log('222 not order!')
+    return false;
+  }
+
+  switch (order.event) {
+    case Event.BUY:
+      shoppingManager.on(Event.BUY, (price: Order['price']) => {
+        console.log('Buying handler... ', price)
+      })
+      shoppingManager.buy(order);
+      break;
+
+    case Event.ADD_TO_CART:
+      shoppingManager.on(Event.ADD_TO_CART, (addToCart: Order['addToCart']) => {
+        console.log('Adding to cart handler... ', addToCart)
+      })
+      shoppingManager.addToCart(order);
+    break;
+
+    case Event.REMOVE_FROM_CART:
+      shoppingManager.on(Event.REMOVE_FROM_CART, (removed: Order['removed']) => {
+        console.log('Removing from cart handler... ', removed)
+      })
+      shoppingManager.removeFromCart(order);
+    break;
+
+    case Event.CHECKOUT:
+      shoppingManager.on(Event.CHECKOUT, (sold: Order) => {
+        console.log('Removing from cart handler... ', sold)
+      })
+      shoppingManager.checkout(order);
+    break;
+  }
+}
+
+export { createDefaultDb, dispatchShoppingEvent, processImage, readAndWrite }
