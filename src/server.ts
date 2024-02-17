@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { promisify } from 'util';
 import express, { Express, Request, Response } from "express";
-import { ImageRequest, User } from "./types";
-import { processImage } from './helpers';
+import { ImageRequest, User, Order } from "./types";
+import { dispatchShoppingEvent, processImage } from './helpers';
 
 const app: Express = express();
 app.use(express.json());
@@ -53,5 +53,13 @@ app.route('/image')
         res.status(500).send('Error downloading or saving image: ' + err);
       })
   })  
+
+  app.route('/buy')
+    .post((req: Request<Order>, res: Response) => {
+      const order: Order = req.body;
+      (dispatchShoppingEvent(order) === false) ?
+        res.status(400).send({error: 'Wrong incoming data!'}) :
+        res.send(`Shopping: ${ JSON.stringify(order) }`);
+    })   
 
 export { app };
